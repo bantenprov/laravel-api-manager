@@ -12,10 +12,10 @@
                     {{ Session::get('message') }}
                 </div>
             @endif
-            <form action="{{url('api-manager')}}" method="GET">
+            <form action="{{url('host-keys')}}" method="GET">
                 <div class="box-body">
                     <div class="form-group">
-                        <label for="name">Name</label>
+                        <label for="name">Hostname</label>
                         <input type="text" class="form-control" name="search" id="name" value="{{ Request::get('search') }}" placeholder=" Name">
                     </div>
                 </div><!-- /.box-body -->
@@ -37,36 +37,33 @@
             <div class="box-header">
             </div><!-- /.box-header -->
             <div class="box-body table-responsive">
+                <span class="btn btn-success" onclick="request()">Request</span>
                 <table class="table table-bordered table-hover">
                     <tr>
                         <th style="width: 10px">#</th>
                         <th>Created At</th>
-                        <th>Client</th>
+                        <th>Hostname</th>
                         <th>Api Keys</th>
-                        <th>Action</th>
+                        <th>State</th>
+                        <th>Transition</th>
+                        <th>User</th>
                     </tr>
                     <?php $i = 1 + $data->currentPage() * $data->perPage() - $data->perPage(); ?>
                     @foreach($data as $row)
                     <tr>
                         <td>{{ $i++ }}</td>
                         <td>{{$row->created_at->format('M d, Y')}}</td>
-                        <td>{{ $row->client }}</a></td>
-                        <td>{{$row->api_key}}</td>
-                        <td><a href="{{ url('api-manager', $row->id).'/edit' }}" class="btn btn-warning btn-sm">
-                        	action
-                        </a>
-                        <a href="{{ url('api-manager', $row->id).'' }}" class="btn btn-success btn-sm">
-                        	view
-                        </a></td>
+                        <td>{{ $row->hostname }}</td>
+                        <td>{{$row->keys}}</td>
+                        <td>{{$row->state}}</td>
+                        <td>{{$row->transition}}</td>
+                        <td>{{$row->getUserName->name}}</td>
                     </tr>
                     @endforeach
                 </table>
             </div><!-- /.box-body -->
             <div class="box-footer clearfix">
                 {!! $data->render() !!}
-                <div class="pull-right">
-                    <a href="{{ url('api-manager/create') }}" class="btn btn-success">Add</a>
-                </div>
             </div>
                 {!! csrf_field() !!}
         </div><!-- /.box -->
@@ -76,3 +73,24 @@
 </section>
 </div>
 </div>
+<script type="text/javascript">
+  function request() {
+    var base_url = "{{ url('/') }}";
+    var a = confirm("Are You sure You want to request Apikey?");
+    if(a == true){
+      $.ajax({
+        headers: {
+              'X-CSRF-TOKEN': "{{ csrf_token() }}"
+        },
+  			url : "/host-keys/request",
+  			data : {
+            client: base_url,
+            requests: "Request"
+        },
+  			type : 'POST'
+  		});
+    }else {
+      return false;
+    }
+  }
+</script>
