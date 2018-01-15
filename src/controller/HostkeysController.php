@@ -158,7 +158,7 @@ class HostkeysController extends Controller
 
   public function request(Request $request){
       $validator = Validator::make($request->all(), [
-        'client'			=> 'required|unique:host_keys,hostname',
+        'host'			=> 'required|unique:host_keys,hostname',
         'description'		=> 'required',
         ]);
       if($validator->fails())
@@ -172,7 +172,8 @@ class HostkeysController extends Controller
       else{ $current_user = Auth::user()->id; }
       $headers = ['Content-Type' => 'application/json'];
       $data = [
-        'client' => $request->host,
+        'host' => $request->host,
+        'client' => $request->client,
         'request' => 'Request',
         'deskripsi' => $request->description,
         'user_id' => $current_user
@@ -180,8 +181,8 @@ class HostkeysController extends Controller
       $body = json_encode($data);
 
       //kalo udah rilis
-      $clients 			= str_replace(array('https://', 'http://'), array('',''),$request->client);
-      $url = $clients."/api/v1/api-manager/request";
+      $host 			= str_replace(array('https://', 'http://'), array('',''),$request->host);
+      $url = $host."/api/v1/api-manager/request";
 
       //untuk local
       // $url = "dashboard.local/api/v1/api-manager/receive";
@@ -192,20 +193,50 @@ class HostkeysController extends Controller
       $responses = json_decode($response);
 
       $hostkey = New Hostkeys;
-      $hostkey->hostname 			= $clients;
+      $hostkey->hostname 			= $host;
       $hostkey->keys 			= "";
       $hostkey->state 		= $responses->result->request;
       $hostkey->transition 		= "Propose To ".$responses->result->request;
       $hostkey->user_id           = $responses->result->user_id;
       if($responses->status == 200){
         $hostkey->save();
-
+        if(env('URL_APIMANAGER') != NULL){
+          $url_apimanager = str_replace('"', '',env('URL_APIMANAGER'));
+          if($url_apimanager != "" || $url_apimanager != NULL || $url_apimanager != false || !empty($url_apimanager)){
+            $this->send_apimanager($url_apimanager,$request,$current_user,$hostkey->transition);
+          }
+        }
         Session::flash('message', 'Send Request Api Keys Successfuly');
       }else {
         Session::flash('message', $responses->message);
       }
 
       return Redirect::to('host-keys');
+  }
+
+  private function send_apimanager($url_apimanager,$request,$current_user,$keterangan){
+      $headers = ['Content-Type' => 'application/json'];
+      $host 			= str_replace(array('https://', 'http://'), array('',''),$request->host);
+      $client 			= str_replace(array('https://', 'http://'), array('',''),$request->client);
+      $data = [
+        'host' => $host,
+        'client' => $client,
+        'keterangan' => $keterangan,
+        'user_id' => $current_user
+      ];
+      $body = json_encode($data);
+
+      //kalo udah rilis
+      $url = $url_apimanager."/api/store";
+
+      //untuk local
+      // $url = "bloger.local/api/v1/host-keys";
+
+      $client = new \GuzzleHttp\Client();
+      $res = $client->request('POST', $url,['headers'=>$headers,'body'=>$body]);
+      $response = $res->getBody();
+      $responses = json_decode($response);
+      return $responses;
   }
 
   /**
