@@ -98,23 +98,26 @@
 </div>
 <script type="text/javascript">
   function transisi(clients, requests) {
-    var base_url = "{{ url('/') }}";
-    var a = confirm("Are You sure You want to "+requests+"?");
-    if(a == true){
-      $.ajax({
-        headers: {
-              'X-CSRF-TOKEN': "{{ csrf_token() }}"
-        },
-  			url : base_url+"/api-manager/transition",
-  			data : {
-            client: clients,
-            host: base_url,
-            request: requests,
-        },
-  			type : 'POST'
-  		});
-    }else {
-      return false;
+        var base_url = "{{ url('/') }}";
+        var a = confirm("Are You sure You want to "+requests+"?");
+        if(a == true){
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                },
+                url : base_url+"/api-manager/transition",
+                data : {
+                    client: clients,
+                    host: base_url,
+                    request: requests,
+                },
+                type : 'POST',
+                success : function(){
+                    window.location ='{{ url()->current() }}'
+                }
+            });
+        }else {
+            return false;
+        }
     }
-  }
 </script>
